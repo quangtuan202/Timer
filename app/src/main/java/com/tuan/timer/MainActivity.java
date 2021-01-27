@@ -1,14 +1,24 @@
 package com.tuan.timer;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
+import static com.tuan.timer.App.*;
+import static com.tuan.timer.App.CHANNEL_1_ID;
 
 public class MainActivity extends AppCompatActivity {
     public final long totalTime=1_000_000_000_000L;
@@ -20,13 +30,14 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences sharedPreference1 ;
     SharedPreferences sharedPreference2 ;
     public static final String MY_TAG = "Destroy";
-
+    private NotificationManagerCompat notificationManager;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        notificationManager = NotificationManagerCompat.from(this);
 
         TextView txtTimePass1=findViewById(R.id.time_pass1);
         Button btn_start=findViewById(R.id.btn_start);
@@ -40,6 +51,11 @@ public class MainActivity extends AppCompatActivity {
         Button btn_stop2=findViewById(R.id.btn_stop2);
         Button btn_resume2=findViewById(R.id.btn_resume2);
 
+        Button btn_intent=findViewById(R.id.btn_intent);
+        Button btn_noti=findViewById(R.id.btn_noti);
+
+        //NotificationManager notificationManager;
+
         //Get timer from SharedPreferences
         sharedPreference1 = getSharedPreferences("Timer1", MODE_PRIVATE);
         sharedPreference2 = getSharedPreferences("Timer2", MODE_PRIVATE);
@@ -47,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d("Timer1:", String.valueOf(timePass1));
         timePass2=sharedPreference2.getLong("Timer2",0);
         Log.d("Timer2:", String.valueOf(timePass2));
+
+
 
 
             timer1 = new CountDownTimer(totalTime, countDownInterval) {
@@ -59,6 +77,14 @@ public class MainActivity extends AppCompatActivity {
                         //txtTotalTimeVariable.setText("Total time = "+totalTime);
                         //txtTimePassVariable.setText("Time passed = "+timePass);
                         //txtTimeRemainVariable.setText("Time Remains = "+count);
+                    Notification notification = new NotificationCompat.Builder(MainActivity.this, CHANNEL_1_ID)
+                            .setSmallIcon(R.drawable.ic_hand)
+                            .setContentTitle("Time pass 1")
+                            .setContentText(String.valueOf(timePass1))
+                            .setPriority(NotificationCompat.PRIORITY_HIGH)
+                            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                            .build();
+                    notificationManager.notify(1, notification);
                     }
 
                 @Override
@@ -73,6 +99,14 @@ public class MainActivity extends AppCompatActivity {
                 timePass2++;
                 //txtTimeRemain.setText("seconds remaining: " + millisUntilFinished / countDownInterval);
                 txtTimePass2.setText("seconds pass: " + timePass2);
+                Notification notification = new NotificationCompat.Builder(MainActivity.this, CHANNEL_1_ID)
+                        .setSmallIcon(R.drawable.ic_hand)
+                        .setContentTitle("Time pass 2")
+                        .setContentText(String.valueOf(timePass2))
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                        .build();
+                notificationManager.notify(2, notification);
 
                 //txtTotalTimeVariable.setText("Total time = "+totalTime);
                 //txtTimePassVariable.setText("Time passed = "+timePass);
@@ -217,6 +251,37 @@ public class MainActivity extends AppCompatActivity {
 
         });
 
+        btn_intent.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent sendIntent = new Intent();
+                sendIntent.setAction(Intent.ACTION_SEND);
+                sendIntent.putExtra(Intent.EXTRA_TEXT, "This is my text to send.");
+                sendIntent.setType("text/plain");
+
+                Intent shareIntent = Intent.createChooser(sendIntent, null);
+                startActivity(shareIntent);
+
+            }
+        });
+
+        btn_noti.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Notification notification = new NotificationCompat.Builder(MainActivity.this, CHANNEL_1_ID)
+                        .setSmallIcon(R.drawable.ic_hand)
+                        .setContentTitle("Time pass")
+                        .setContentText(String.valueOf(timePass1))
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                        .build();
+                notificationManager.notify(1, notification);
+
+
+            }
+        });
+
+
 
 
     }
@@ -241,4 +306,7 @@ public class MainActivity extends AppCompatActivity {
         myEdit2.apply();
         Log.i(MY_TAG, "onPause");
     }
+
+
+
 }
