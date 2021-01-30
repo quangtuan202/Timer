@@ -5,32 +5,32 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import static com.tuan.timer.App.*;
 import static com.tuan.timer.App.CHANNEL_1_ID;
 
 public class MainActivity extends AppCompatActivity {
     public final long totalTime=1_000_000_000_000L;
     public final long countDownInterval =1000;
-    public long timePass1=0;
-    public long timePass2=0;
-    CountDownTimer timer1;
-    CountDownTimer timer2;
-    SharedPreferences sharedPreference1 ;
-    SharedPreferences sharedPreference2 ;
+    public static long timePass1=0;
+    public static long timePass2=0;
+    public static CountDownTimer timer1;
+    public static CountDownTimer timer2;
+    public static SharedPreferences sharedPreference1 ;
+    public static SharedPreferences sharedPreference2 ;
     public static final String MY_TAG = "Destroy";
     private NotificationManagerCompat notificationManager;
+    private MediaSessionCompat mediaSession;
+
 
 
     @Override
@@ -66,30 +66,74 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+        Intent notificationIntentPause = new Intent(MainActivity.this, NotificationReceiver2.class);
+        notificationIntentPause.putExtra("action","0");
+        PendingIntent pendingIntentPause = PendingIntent.getBroadcast(this,
+                0, notificationIntentPause, PendingIntent.FLAG_UPDATE_CURRENT);
 
-            timer1 = new CountDownTimer(totalTime, countDownInterval) {
+       Intent notificationIntentResume = new Intent(MainActivity.this, NotificationReceiver2.class);
+       notificationIntentResume.putExtra("action","1");
+        PendingIntent pendingIntentResume = PendingIntent.getBroadcast(this,
+          1, notificationIntentResume, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+        Intent activityIntent = new Intent(this, MainActivity.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(this,
+                0, activityIntent, 0);
+        Intent broadcastIntent = new Intent(this, NotificationReceiver.class);
+        broadcastIntent.putExtra("toastMessage", "Toast check");
+        PendingIntent actionIntent = PendingIntent.getBroadcast(this,
+                0, broadcastIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+        NotificationCompat.Builder notification1 = new NotificationCompat.Builder(MainActivity.this, CHANNEL_1_ID)
+                .setSmallIcon(R.drawable.ic_hand)
+                .setContentTitle("Time pass 1")
+                //.setContentText(String.valueOf(System.currentTimeMillis()))
+                .addAction(R.drawable.ic_play,"Play",pendingIntentResume)
+                .addAction(R.drawable.ic_pause,"Pause",pendingIntentPause)
+                //.addAction(R.drawable.ic_play,"Play",actionIntent)
+                //.addAction(R.drawable.ic_pause,"Pause",actionIntent)
+                .setStyle(new  androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0,1))
+                //.setStyle(new  androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0))
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setTicker("Ticker Text");
+                //.setWhen(System.currentTimeMillis())
+                //.setShowWhen(true)// the time stamp, you will probably use System.currentTimeMillis() for most scenarios
+                //.setUsesChronometer(true);
+
+
+
+
+        timer1 = new CountDownTimer(totalTime, countDownInterval) {
                 @Override
                 public void onTick(long millisUntilFinished) {
                         timePass1++;
                         //txtTimeRemain.setText("seconds remaining: " + millisUntilFinished / countDownInterval);
                         txtTimePass1.setText("seconds pass: " + timePass1);
+                        notification1.setContentText(ConvertTime.convertToTime(timePass1));
+                        notificationManager.notify(1, notification1.build());
 
                         //txtTotalTimeVariable.setText("Total time = "+totalTime);
                         //txtTimePassVariable.setText("Time passed = "+timePass);
                         //txtTimeRemainVariable.setText("Time Remains = "+count);
-                    Notification notification = new NotificationCompat.Builder(MainActivity.this, CHANNEL_1_ID)
-                            .setSmallIcon(R.drawable.ic_hand)
-                            .setContentTitle("Time pass 1")
-                            .setContentText(String.valueOf(timePass1))
-                            .setPriority(NotificationCompat.PRIORITY_HIGH)
-                            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                            .build();
-                    notificationManager.notify(1, notification);
+                   // Notification notification = new NotificationCompat.Builder(MainActivity.this, CHANNEL_1_ID)
+                     //       .setSmallIcon(R.drawable.ic_hand)
+                        //    .setContentTitle("Time pass 1")
+                          //  .setContentText(String.valueOf(timePass1))
+                            //.addAction(R.drawable.ic_play,"Play",null)
+                            //.addAction(R.drawable.ic_pause,"Pause",null)
+                            //.setStyle(new  androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0,1).setMediaSession(mediaSession.getSessionToken()))
+                            //.setPriority(NotificationCompat.PRIORITY_HIGH)
+                            //.setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                            //.build();
+                   // notificationManager.notify(1, notification);
                     }
 
                 @Override
                 public void onFinish() {
-                    //txtTimeRemain.setText("done!");
+                    notification1.setContentText("Done");
                 }
             };
         // Timer 2
@@ -99,14 +143,17 @@ public class MainActivity extends AppCompatActivity {
                 timePass2++;
                 //txtTimeRemain.setText("seconds remaining: " + millisUntilFinished / countDownInterval);
                 txtTimePass2.setText("seconds pass: " + timePass2);
-                Notification notification = new NotificationCompat.Builder(MainActivity.this, CHANNEL_1_ID)
-                        .setSmallIcon(R.drawable.ic_hand)
-                        .setContentTitle("Time pass 2")
-                        .setContentText(String.valueOf(timePass2))
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
-                        .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                        .build();
-                notificationManager.notify(2, notification);
+               // Notification notification = new NotificationCompat.Builder(MainActivity.this, CHANNEL_1_ID)
+                 //       .setSmallIcon(R.drawable.ic_hand)
+                   //     .setContentTitle("Time pass 2")
+                   //     .setContentText(String.valueOf(timePass2))
+                   //     .addAction(R.drawable.ic_play,"Play",null)
+                   //     .addAction(R.drawable.ic_pause,"Pause",null)
+                   //     .setStyle(new  androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0,1).setMediaSession(mediaSession.getSessionToken()))
+                   //     .setPriority(NotificationCompat.PRIORITY_HIGH)
+                   //     .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                    //    .build();
+                //notificationManager.notify(2, notification);
 
                 //txtTotalTimeVariable.setText("Total time = "+totalTime);
                 //txtTimePassVariable.setText("Time passed = "+timePass);
@@ -140,7 +187,14 @@ public class MainActivity extends AppCompatActivity {
         btn_start.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                timer1.start();
+                if(timePass1==0) {
+                    timer1.start();
+                    notificationManager.notify(1, notification1.build());
+                }
+                else{
+                    ;
+                }
+
 
             }
 
