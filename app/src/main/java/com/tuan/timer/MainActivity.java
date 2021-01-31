@@ -3,6 +3,7 @@ package com.tuan.timer;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.room.Room;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -13,12 +14,20 @@ import android.os.CountDownTimer;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import static com.tuan.timer.App.CHANNEL_1_ID;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
     public final long totalTime=1_000_000_000_000L;
     public final long countDownInterval =1000;
     public static long timePass1=0;
@@ -27,9 +36,24 @@ public class MainActivity extends AppCompatActivity {
     public static CountDownTimer timer2;
     public static SharedPreferences sharedPreference1 ;
     public static SharedPreferences sharedPreference2 ;
+    public static String currentUser;
+    public static Timer timer;
+
     public static final String MY_TAG = "Destroy";
     private NotificationManagerCompat notificationManager;
     private MediaSessionCompat mediaSession;
+    UserDatabase userDatabase;
+    Intent notificationIntentPause;
+    Intent notificationIntentResume;
+    PendingIntent pendingIntentPause;
+    PendingIntent pendingIntentResume;
+    TextView txtTimePass1;
+    int uniqueId;
+    List<Timer> timerList=new ArrayList();
+    public static HashMap<String,Timer> timerMap = new HashMap<String, Timer>();
+    List<String> nameListForCheckExistence=new ArrayList();
+    public static int requestCode=0;
+
 
 
 
@@ -39,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         notificationManager = NotificationManagerCompat.from(this);
 
-        TextView txtTimePass1=findViewById(R.id.time_pass1);
+        txtTimePass1=findViewById(R.id.time_pass1);
         Button btn_start=findViewById(R.id.btn_start);
         Button btn_pause=findViewById(R.id.btn_pause);
         Button btn_stop=findViewById(R.id.btn_stop);
@@ -53,6 +77,25 @@ public class MainActivity extends AppCompatActivity {
 
         Button btn_intent=findViewById(R.id.btn_intent);
         Button btn_noti=findViewById(R.id.btn_noti);
+        Button btn_add_user=findViewById(R.id.btn_add_user);
+        Spinner spinner=findViewById(R.id.spinner);
+
+        userDatabase=Room.databaseBuilder(getApplicationContext(),UserDatabase.class,"infodb").allowMainThreadQueries().build();
+
+        List<User> userList = userDatabase.UserDao().findAllUser();
+        List<String> nameList=new ArrayList<String>();
+        for (int i=0;i<userList.size();i++){
+            nameList.add(userList.get(i).name);
+            Log.d("User name:",userList.get(i).name);
+        }
+
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, nameList);
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        // attaching data adapter to spinner
+        spinner.setAdapter(dataAdapter);
+        spinner.setOnItemSelectedListener(this);
+
 
         //NotificationManager notificationManager;
 
@@ -66,14 +109,14 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        Intent notificationIntentPause = new Intent(MainActivity.this, NotificationReceiver2.class);
+        notificationIntentPause = new Intent(MainActivity.this, NotificationReceiver2.class);
         notificationIntentPause.putExtra("action","0");
-        PendingIntent pendingIntentPause = PendingIntent.getBroadcast(this,
+        pendingIntentPause = PendingIntent.getBroadcast(this,
                 0, notificationIntentPause, PendingIntent.FLAG_UPDATE_CURRENT);
 
-       Intent notificationIntentResume = new Intent(MainActivity.this, NotificationReceiver2.class);
+       notificationIntentResume = new Intent(MainActivity.this, NotificationReceiver2.class);
        notificationIntentResume.putExtra("action","1");
-        PendingIntent pendingIntentResume = PendingIntent.getBroadcast(this,
+       pendingIntentResume = PendingIntent.getBroadcast(this,
           1, notificationIntentResume, PendingIntent.FLAG_UPDATE_CURRENT);
 
 
@@ -136,6 +179,8 @@ public class MainActivity extends AppCompatActivity {
                     notification1.setContentText("Done");
                 }
             };
+
+
         // Timer 2
         timer2 = new CountDownTimer(totalTime, countDownInterval) {
             @Override
@@ -187,9 +232,10 @@ public class MainActivity extends AppCompatActivity {
         btn_start.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                if(timePass1==0) {
-                    timer1.start();
-                    notificationManager.notify(1, notification1.build());
+                if(timerMap.get(currentUser).timePass==0) {
+                    timerMap.get(currentUser).countDownTimer.start();
+                    //Log.d("Action set:",timerMap.get(currentUser).intentPause.getAction());
+                    //notificationManager.notify(1, notification1.build());
                 }
                 else{
                     ;
@@ -335,6 +381,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        btn_add_user.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                User user1=new User("abc");
+                User user2=new User("def");
+                User user3=new User("ghi");
+                userDatabase.UserDao().insertPerson(user1);
+                userDatabase.UserDao().insertPerson(user2);
+                userDatabase.UserDao().insertPerson(user3);
+
+
+            }
+        });
+
+
 
 
 
@@ -361,6 +423,65 @@ public class MainActivity extends AppCompatActivity {
         Log.i(MY_TAG, "onPause");
     }
 
+//ASpinner
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long l) {
+        uniqueId=position;
+        currentUser = parent.getItemAtPosition(position).toString();
+        String userName= parent.getItemAtPosition(position).toString();
+        Log.d("Position:", String.valueOf(position));
+        //Use position as notificationId
+        Timer timer=new Timer(userName,position,MainActivity.this,NotificationReceiver2.class);
+        timer.sharedPreference=getSharedPreferences(timer.userName, MODE_PRIVATE);
+        timer.timePass=timer.sharedPreference.getLong(timer.userName,0);
+        timer.id=position;
+
+        //Create notification builder
+        timer.createNotificationChannels(MainActivity.this);
+        timer.notificationBuilder.setSmallIcon(R.drawable.ic_hand)
+                .setContentTitle(userName)
+                .addAction(R.drawable.ic_play,"Play",timer.pendingIntentResume)
+                .addAction(R.drawable.ic_pause,"Pause",timer.pendingIntentPause)
+                .setStyle(new  androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0,1))
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setTicker("Ticker Text");
 
 
+        timer.countDownTimer = new CountDownTimer(totalTime, countDownInterval) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                timer.timePass++;
+                //txtTimeRemain.setText("seconds remaining: " + millisUntilFinished / countDownInterval);
+                txtTimePass1.setText("seconds pass: " + timer.timePass);
+                timer.notificationBuilder.setContentText(ConvertTime.convertToTime(timer.timePass));
+                notificationManager.notify(timer.id, timer.notificationBuilder.build());
+
+            };
+
+
+            @Override
+            public void onFinish() {
+                ;
+            }
+        };
+
+        //Add name to list
+
+        if(!nameListForCheckExistence.contains(timer.userName)) {
+            nameListForCheckExistence.add(timer.userName);
+            timerMap.put(timer.userName,timer);
+        }
+        else{
+            ;
+        }
+        // Showing selected spinner item
+        Toast.makeText(parent.getContext(), "Selected: "+String.valueOf(position) + timer.userName, Toast.LENGTH_LONG).show();
+
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> adapterView) {
+
+    }
 }

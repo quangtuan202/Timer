@@ -10,20 +10,20 @@ public class ConvertTime {
         int minutes= (int) ((time-hours*3600)/60);
         int seconds= (int) (time-hours*3600-minutes*60);
         if(hours<10){
-            stringHours="0"+String.valueOf(hours);
+            stringHours="0"+hours;
         }
         else{
             stringHours=String.valueOf(hours);
         }
 
         if(minutes<10){
-            stringMinutes="0"+String.valueOf(minutes);
+            stringMinutes="0"+minutes;
         }
         else{
             stringMinutes=String.valueOf(minutes);
         }
         if(seconds<10){
-            stringSeconds="0"+String.valueOf(seconds);
+            stringSeconds="0"+seconds;
         }
         else{
             stringSeconds=String.valueOf(seconds);

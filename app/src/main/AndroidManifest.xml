@@ -9,15 +9,22 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Timer">
+        <receiver android:name=".NotificationReceiver2">
+            <intent-filter>
+                <action android:name="com.tuan.timer.ACTION_PAUSE" />
+                <action android:name="com.tuan.timer.ACTION_RESUME" />
+                <action android:name="com.tuan.timer.ACTION_STOP" />
+            </intent-filter>
+        </receiver>
         <activity android:name=".MainActivity">
             <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <receiver android:name=".NotificationReceiver2">
-        </receiver>
+
     </application>
 
 </manifest>
