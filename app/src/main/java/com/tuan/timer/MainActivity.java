@@ -37,10 +37,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public static SharedPreferences sharedPreference1 ;
     public static SharedPreferences sharedPreference2 ;
     public static String currentUser;
-    public static Timer timer;
+    //public static Timer timer;
 
     public static final String MY_TAG = "Destroy";
-    private NotificationManagerCompat notificationManager;
+    public static NotificationManagerCompat notificationManager;
     private MediaSessionCompat mediaSession;
     UserDatabase userDatabase;
     Intent notificationIntentPause;
@@ -232,7 +232,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         btn_start.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
+
                 if(timerMap.get(currentUser).timePass==0) {
+                    //startForeground(timer.id, timer.notificationBuilder.build());
                     timerMap.get(currentUser).countDownTimer.start();
                     //Log.d("Action set:",timerMap.get(currentUser).intentPause.getAction());
                     //notificationManager.notify(1, notification1.build());
@@ -438,11 +440,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         //Create notification builder
         timer.createNotificationChannels(MainActivity.this);
-        timer.notificationBuilder.setSmallIcon(R.drawable.ic_hand)
+        timer.notificationBuilder.setSmallIcon(R.drawable.ic_l)
                 .setContentTitle(userName)
-                .addAction(R.drawable.ic_play,"Play",timer.pendingIntentResume)
-                .addAction(R.drawable.ic_pause,"Pause",timer.pendingIntentPause)
-                .setStyle(new  androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0,1))
+                //.addAction(R.drawable.ic_resume,"Play",timer.pendingIntentResume)
+                .addAction(R.drawable.ic_stop,"Pause",timer.pendingIntentPause)
+                //.setStyle(new  androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0,1))
+                .setStyle(new  androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setTicker("Ticker Text");
@@ -456,6 +459,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 txtTimePass1.setText("seconds pass: " + timer.timePass);
                 timer.notificationBuilder.setContentText(ConvertTime.convertToTime(timer.timePass));
                 notificationManager.notify(timer.id, timer.notificationBuilder.build());
+                //startForeground(timer.id, timer.notificationBuilder.build());
 
             };
 

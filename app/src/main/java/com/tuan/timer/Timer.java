@@ -30,7 +30,7 @@ public class Timer {
     public Context context;
 
 
-    public Timer(String userName, long timePass,int notificationId, Context context){
+    public Timer (String userName, long timePass,int notificationId, Context context){
         this.userName= userName;
         this.sharedPreference=context.getSharedPreferences(userName, MODE_PRIVATE);
         this.timePass=timePass;
@@ -67,7 +67,6 @@ public class Timer {
                     NotificationManager.IMPORTANCE_LOW
             );
             notificationChannel.setDescription("This is Channel");
-
             NotificationManager notificationManager = getSystemService(this.context,NotificationManager.class);
             notificationManager.createNotificationChannel(notificationChannel);
 
